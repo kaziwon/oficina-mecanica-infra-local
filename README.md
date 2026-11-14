@@ -6,15 +6,15 @@ Os repositorios e recursos das fases anteriores permanecem intactos.
 
 | Repositorio | Responsabilidade |
 | --- | --- |
-| oficina-mecanica-infra-local | Cluster kind e servidor Sonar compartilhados |
+| oficina-mecanica-infra-local | Cluster kind, ElasticMQ persistente e servidor Sonar compartilhados |
 | oficina-mecanica-ordens | API, banco, migrations, testes e entrega de Ordens |
 | oficina-mecanica-execucao | API, MongoDB, testes e entrega de Execucao |
 | oficina-mecanica-cobranca | API, banco, migrations, testes e entrega de Cobranca |
 
 Compartilhar cluster nao significa compartilhar banco ou exigir deploy conjunto.
 O CD de um servico nao deve criar/destruir o cluster nem os recursos dos demais.
-Mensageria, gateway e agentes de monitoramento compartilhados serao incluidos
-neste repositorio nas proximas etapas. New Relic continua externo.
+ElasticMQ oferece filas compativeis com SQS, sem AWS. Gateway e agentes de
+monitoramento ficam para uma etapa posterior. New Relic continua externo.
 
 ## Cluster
 
@@ -28,13 +28,17 @@ Na raiz deste repositorio:
 bash scripts/cluster.sh init
 bash scripts/cluster.sh plan
 bash scripts/cluster.sh apply
+python3 scripts/deploy_platform.py
 bash scripts/kubectl-local.sh get nodes
 bash scripts/kubectl-local.sh get pods -A
 ```
 
 Init instala providers e configura o state. Plan mostra as mudancas; apply cria
-a base. O helper kubectl aponta explicitamente para oficina-fase4, sem mudar
-o contexto global. Veja o [guia do cluster](docs/16-kubernetes-local.md).
+a base; deploy_platform.py aplica somente namespace, fila, configuracao e volume
+compartilhados e gera as credenciais privadas iniciais. O helper kubectl aponta
+explicitamente para oficina-fase4, sem mudar o contexto global.
+Veja o [guia do cluster](docs/16-kubernetes-local.md) e o
+[passo a passo do deploy](docs/17-deploy-kubernetes-local.md).
 
 O state e o kubeconfig ficam em `~/.local/share/oficina-fase4`, fora dos
 repositorios e dos checkouts dos runners. Contem credenciais: nao publicar nem
@@ -49,7 +53,7 @@ Para destruir intencionalmente o cluster (nao executado automaticamente):
 bash scripts/cluster.sh destroy
 ```
 
-Destroy remove o cluster inteiro e pode apagar os dados dos futuros bancos.
+Destroy remove o cluster inteiro e pode apagar os dados dos bancos e filas.
 Nao delete o container do node manualmente. Backup de state nao e backup de banco.
 
 ## SonarQube
@@ -74,7 +78,12 @@ terraform -chdir=cluster init -backend=false
 terraform -chdir=cluster fmt -check -recursive
 terraform -chdir=cluster validate
 terraform -chdir=cluster test
-python3 -m unittest discover -s tests -v
+python3 -m venv .venv
+.venv/bin/pip install -r tests/requirements.txt
+.venv/bin/python -m unittest discover -s tests -v
+terraform -chdir=platform init -backend=false -lockfile=readonly
+terraform -chdir=platform fmt -check -recursive
+terraform -chdir=platform validate
 bash -n scripts/cluster.sh scripts/kubectl-local.sh
 ```
 
@@ -93,7 +102,8 @@ durante a execucao. Nao remova essa verificacao para contornar erro de checksum.
 
 ## Estado Atual
 
-Base do kind e servidor Sonar preparados. APIs, bancos e filas no Kubernetes,
-CD por servico, metrics-server/HPA e observabilidade distribuida ainda pendentes.
-O Sonar ja iniciado preserva os projetos; a primeira analise e o quality gate
-autenticados ainda precisam ser validados com os runners.
+Cluster e mensageria persistente implementados. Os tres repositorios de servico
+possuem bancos proprios, APIs e CD independente no kind. As primeiras analises
+reais no Sonar passaram nos tres projetos. O novo CD precisa ser publicado por
+PR e validado no GitHub; sua validacao local nao substitui essa execucao.
+Metrics-server/HPA e observabilidade distribuida no New Relic continuam pendentes.

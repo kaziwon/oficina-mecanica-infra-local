@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticmq
+  namespace: oficina-plataforma
+spec:
+  selector:
+    app: elasticmq
+  ports:
+    - name: sqs
+      port: 9324
+      targetPort: 9324
+  type: ClusterIP

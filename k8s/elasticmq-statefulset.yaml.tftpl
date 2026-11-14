@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticmq
+  namespace: oficina-plataforma
+spec:
+  serviceName: elasticmq
+  replicas: 1
+  selector:
+    matchLabels: {app: elasticmq}
+  template:
+    metadata:
+      labels: {app: elasticmq}
+      annotations:
+        checksum/config: "${config_checksum}"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 999
+      initContainers:
+        - name: permissions
+          image: busybox:1.37@sha256:a7dbc319b1438115a207e11930dc4bb3e643dcb3ec0bdd694bb36cd8fad289ec
+          command: [sh, -ec, 'chown 999:999 /data']
+          securityContext: {runAsUser: 0}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      containers:
+        - name: elasticmq
+          image: softwaremill/elasticmq:1.7.1@sha256:f1de391a9b8c18fd3f2ce37b4f7d1b8989857e8a8e18bb01284fff899e69da82
+          args: [-Xms64m, -Xmx192m, -Dconfig.file=/opt/elasticmq.conf, -jar, /opt/elasticmq/elasticmq-server.jar]
+          command: [java]
+          ports: [{name: sqs, containerPort: 9324}]
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 384Mi}
+          startupProbe:
+            tcpSocket: {port: sqs}
+            periodSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: {port: sqs}
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: sqs}
+            periodSeconds: 10
+          volumeMounts:
+            - {name: config, mountPath: /opt/elasticmq.conf, subPath: elasticmq.conf, readOnly: true}
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: config
+          configMap: {name: elasticmq-config}
+        - name: data
+          persistentVolumeClaim: {claimName: elasticmq-data}

@@ -2,9 +2,11 @@
 *.tfstate*
 *.tfplan
 *.tfvars
+*.tfvars.json
 .env
 .env.*
 __pycache__/
+.venv/
 .DS_Store
 *.kubeconfig
 kubeconfig

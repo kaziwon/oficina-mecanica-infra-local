@@ -8,7 +8,7 @@ permanecem intactos. New Relic continua externo, recebendo a telemetria local.
 Nao se trata de substituir Kubernetes por Docker Compose: o deploy final sera
 feito no cluster local, pelos workflows dos tres servicos.
 
-Arquitetura planejada:
+Arquitetura de entrega:
 
 ```text
 GitHub: PR -> build/testes/cobertura em runner hospedado
@@ -27,7 +27,7 @@ New Relic: externo, recebendo logs, metricas e traces
 Cada servico continua com seu repositorio, banco, configuracao de aplicacao e
 pipeline independente. O cluster e infraestrutura compartilhada e sua base
 fica em oficina-mecanica-infra-local, em cluster/. Os recursos de aplicacao de cada servico
-ficarao no seu proprio repositorio; CD de um servico nao deve destruir os outros.
+ficam no seu proprio repositorio; CD de um servico nao destroi os outros.
 
 ## Implementado nesta primeira etapa
 
@@ -39,12 +39,14 @@ ficarao no seu proprio repositorio; CD de um servico nao deve destruir os outros
 - Kubeconfig proprio, sem mudar o contexto padrao do usuario.
 - Testes simulados de configuracao e helper de kubectl para evitar cluster errado.
 
-Ainda NAO provisiona as APIs, bancos, filas, metrics-server, gateway, HPA ou os
-agentes New Relic. As portas abaixo estao somente reservadas, sem endpoints ativos:
+O modulo cluster/ cria somente a base. O modulo platform/ deste repositorio
+adiciona ElasticMQ e seu volume; infra/kubernetes/ em cada servico adiciona
+seu banco, API e configuracoes. Siga o [guia completo](17-deploy-kubernetes-local.md).
+Metrics-server, gateway, HPA e agentes New Relic ainda nao foram incluidos.
 
-| Uso futuro | Porta no computador | NodePort reservado |
+| Uso | Porta no computador | NodePort |
 | --- | ---: | ---: |
-| Gateway | 18090 | 30080 |
+| Gateway (reservado) | 18090 | 30080 |
 | Ordens | 18101 | 30101 |
 | Execucao | 18102 | 30102 |
 | Cobranca | 18103 | 30103 |
@@ -98,27 +100,26 @@ para resolver erros. Para remover intencionalmente este ambiente:
 bash scripts/cluster.sh destroy
 ```
 
-Depois que houver bancos no cluster, destroy tambem pode apagar seus dados.
+Como existem bancos no cluster, destroy tambem pode apagar seus dados.
 Mudar imagem, portas ou topologia exige recriar o cluster neste provider; por
 isso a base tem state separado dos futuros deploys das aplicacoes.
-Backup e persistencia dos bancos precisam estar definidos antes dessa etapa.
+PVC preserva dados em reinicios de pods, mas nao substitui backup e nao protege
+contra exclusao do cluster/node. Namespaces e PVCs sao protegidos contra destroy
+nos modulos de plataforma/servicos; isso nao impede a destruicao do cluster.
 
 ## Runners e proximos incrementos
 
 Continua sendo um runner por repositorio, em pastas proprias fora do codigo.
-Cadastre os labels sonar-local e kind-local: o primeiro sera usado na qualidade;
-o segundo, no futuro CD. O runner da Fase 3 nao deve ser reutilizado/reconfigurado.
+Cadastre os labels sonar-local e kind-local: o primeiro e usado na qualidade;
+o segundo, no CD. O runner da Fase 3 nao deve ser reutilizado/reconfigurado.
 O runner precisa enxergar o mesmo Docker e kubeconfig local do cluster.
 Nao dispare deploy a partir de forks ou codigo nao revisado de PRs.
 
-Proximos passos, sem considerar esta base um deploy completo:
-
-1. Provisionar bancos e mensageria locais com persistencia e credenciais isoladas.
-2. Adicionar os recursos Kubernetes de cada servico no respectivo repositorio.
-3. Automatizar build, carregamento de imagem no kind, migrations e rollout por servico.
-4. Integrar quality gate ao CD, preservando testes/PRs e Sonar local.
-5. Instalar/validar observabilidade New Relic, metricas e escalabilidade no cluster.
-6. Reexecutar o fluxo completo e as falhas da Saga; consolidar documentacao/video.
+Implementados: persistencia e credenciais isoladas, manifestos por servico,
+build/carregamento de imagem, migrations controladas e CD condicionado ao CI e
+ao Sonar. O CD novo precisa ser publicado e exercitado no GitHub.
+Proximos incrementos: observabilidade distribuida, metricas/escalabilidade,
+BDD automatizado no CI e evidencias/documentacao final da entrega.
 
 Fontes oficiais:
 
