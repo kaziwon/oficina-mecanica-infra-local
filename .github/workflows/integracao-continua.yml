@@ -1,0 +1,38 @@
+name: Integracao continua - Infra local
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validar scripts
+        run: |
+          bash -n scripts/cluster.sh scripts/kubectl-local.sh
+          python3 -m unittest discover -s tests -v
+      - name: Validar Terraform sem provisionamento
+        run: |
+          terraform -chdir=cluster init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=cluster fmt -check -recursive
+          terraform -chdir=cluster validate
+          terraform -chdir=cluster test
+      - name: Validar Compose
+        run: docker compose --env-file sonar.env.example -f compose.sonar.yml config --quiet
