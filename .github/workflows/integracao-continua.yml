@@ -27,6 +27,7 @@ jobs:
       - name: Validar scripts
         run: |
           bash -n scripts/cluster.sh scripts/kubectl-local.sh
+          python3 -m pip install -r tests/requirements.txt
           python3 -m unittest discover -s tests -v
       - name: Validar Terraform sem provisionamento
         run: |
@@ -34,5 +35,8 @@ jobs:
           terraform -chdir=cluster fmt -check -recursive
           terraform -chdir=cluster validate
           terraform -chdir=cluster test
+          terraform -chdir=platform init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=platform fmt -check -recursive
+          terraform -chdir=platform validate
       - name: Validar Compose
         run: docker compose --env-file sonar.env.example -f compose.sonar.yml config --quiet

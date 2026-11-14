@@ -107,7 +107,7 @@ neste computador. Use o download e a verificacao de hash mostrados pelo GitHub.
 Na configuracao de CADA runner, adicione --labels sonar-local,kind-local ao comando
 config.sh gerado pelo GitHub e mantenha os labels padrao. O token temporario
 desse comando e do GitHub Runner, nao e o SONAR_TOKEN.
-Sonar usa sonar-local; o futuro deploy no kind usara kind-local, no mesmo
+Sonar usa sonar-local; o deploy no kind usa kind-local, no mesmo
 computador. A [decisao de entrega local](16-kubernetes-local.md) substitui AWS
 como destino da Fase 4, sem mudar a entrega das fases anteriores.
 Inicie com ./run.sh ou configure o servico pela documentacao do GitHub.
@@ -132,16 +132,18 @@ Tambem e possivel Actions > Qualidade local > Run workflow, escolhendo main.
 Outra branch nao executa o job local. Antes do runner/token estarem configurados,
 o workflow ainda nao esta operacional; sem runner compativel ficara na fila.
 O check de qualidade e posterior ao merge, nao um gate Sonar de PR.
-O futuro CD devera aguardar esse resultado para impedir deploy se a analise falhar.
+O CD aguarda esse resultado e consulta novamente o CI e o Sonar do SHA exato.
+Falha ou ausencia de qualquer verificacao impede o deploy. Qualidade e CD usam
+um lock de arquivo compartilhado no notebook para evitar builds/testes pesados
+simultaneos entre os tres runners; os pipelines continuam independentes.
 
 ## Estado e proximo teste
 
-Servidor, scripts e workflows preparados e testes de cada servico verificados
-localmente com bancos descartaveis. Os tres runners foram cadastrados, e os
-tokens de projeto foram informados como cadastrados nos Secrets de cada repositorio.
-A primeira analise autenticada e o primeiro job real no GitHub ainda precisam
-ser validados depois da publicacao dos workflows na main.
-Nao afirmar que o quality gate passou antes desse teste.
+Os tres runners e tokens foram configurados. As primeiras analises autenticadas
+no GitHub passaram em Ordens, Execucao e Cobranca. Alteracoes futuras precisam
+passar novamente: um resultado antigo nao aprova automaticamente outro commit.
+O workflow de entrega desta etapa ainda precisa de PR/merge e execucao real.
+Veja o [guia de entrega](17-deploy-kubernetes-local.md).
 
 Fontes oficiais:
 
