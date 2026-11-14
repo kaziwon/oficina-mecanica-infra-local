@@ -81,6 +81,16 @@ bash -n scripts/cluster.sh scripts/kubectl-local.sh
 Os testes Terraform usam providers simulados: nao criam recursos Docker.
 O CI valida a configuracao; nao provisiona infraestrutura em push/PR.
 
+Ao adicionar ou atualizar providers, gere os checksums para o notebook macOS
+ARM64 e para o runner Linux AMD64 antes de commitar o lockfile:
+
+```bash
+terraform -chdir=cluster providers lock -platform=darwin_arm64 -platform=linux_amd64
+```
+
+O CI usa `-lockfile=readonly`: valida o arquivo versionado sem alterar hashes
+durante a execucao. Nao remova essa verificacao para contornar erro de checksum.
+
 ## Estado Atual
 
 Base do kind e servidor Sonar preparados. APIs, bancos e filas no Kubernetes,
