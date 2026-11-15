@@ -142,7 +142,8 @@ simultaneos entre os tres runners; os pipelines continuam independentes.
 Os tres runners e tokens foram configurados. As primeiras analises autenticadas
 no GitHub passaram em Ordens, Execucao e Cobranca. Alteracoes futuras precisam
 passar novamente: um resultado antigo nao aprova automaticamente outro commit.
-O workflow de entrega desta etapa ainda precisa de PR/merge e execucao real.
+O fluxo CI -> Sonar -> entrega local passou nos tres repositorios apos os merges.
+Toda alteracao posterior precisa passar novamente pelos mesmos checks.
 Veja o [guia de entrega](17-deploy-kubernetes-local.md).
 
 Fontes oficiais:

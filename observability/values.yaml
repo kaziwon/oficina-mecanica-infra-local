@@ -1,0 +1,60 @@
+global:
+  cluster: oficina-fase4
+  lowDataMode: true
+  customSecretName: newrelic-license
+  customSecretLicenseKey: license
+  customAttributes: {environment: local, phase: '4'}
+
+newrelic-infrastructure:
+  enabled: true
+  privileged: true
+  rbac:
+    kubeletFineGrainedAuth: true
+  common:
+    config:
+      disableCloudClusterIdDetection: true
+      namespaceSelector:
+        matchLabels: {app.kubernetes.io/part-of: oficina-fase4}
+  kubelet:
+    # O kubelet do kind usa certificado local; vazio e a opcao oficial de compatibilidade.
+    config: {caBundlePath: ''}
+    kubelet:
+      resources:
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: 250m, memory: 256Mi}
+    agent:
+      resources:
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: 250m, memory: 256Mi}
+  ksm:
+    ksm:
+      resources:
+        requests: {cpu: 50m, memory: 128Mi}
+        limits: {cpu: 250m, memory: 256Mi}
+    forwarder:
+      resources:
+        requests: {cpu: 25m, memory: 64Mi}
+        limits: {cpu: 250m, memory: 128Mi}
+  controlPlane: {enabled: false}
+
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {cpu: 250m, memory: 128Mi}
+  collectors: [nodes, namespaces, pods, deployments, statefulsets, daemonsets, replicasets, jobs, services, persistentvolumeclaims, persistentvolumes]
+  metricAnnotationsAllowList: []
+  metricLabelsAllowlist: ['pods=[app]', 'namespaces=[app.kubernetes.io/part-of]', 'deployments=[app]']
+
+# Logs das APIs sao enviados pelo agente .NET, sem um segundo coletor duplicando tudo.
+newrelic-logging: {enabled: false}
+nri-metadata-injection: {enabled: false}
+nri-kube-events: {enabled: false}
+nri-prometheus: {enabled: false}
+newrelic-prometheus-agent: {enabled: false}
+newrelic-k8s-metrics-adapter: {enabled: false}
+k8s-agents-operator: {enabled: false}
+newrelic-infra-operator: {enabled: false}
+newrelic-pixie: {enabled: false}
+nr-ebpf-agent: {enabled: false}
+pixie-chart: {enabled: false}

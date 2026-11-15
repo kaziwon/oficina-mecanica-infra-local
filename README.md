@@ -6,19 +6,19 @@ Os repositorios e recursos das fases anteriores permanecem intactos.
 
 | Repositorio | Responsabilidade |
 | --- | --- |
-| oficina-mecanica-infra-local | Cluster kind, ElasticMQ persistente e servidor Sonar compartilhados |
+| oficina-mecanica-infra-local | Cluster kind, ElasticMQ persistente, Sonar e agentes Kubernetes compartilhados |
 | oficina-mecanica-ordens | API, banco, migrations, testes e entrega de Ordens |
 | oficina-mecanica-execucao | API, MongoDB, testes e entrega de Execucao |
 | oficina-mecanica-cobranca | API, banco, migrations, testes e entrega de Cobranca |
 
 Compartilhar cluster nao significa compartilhar banco ou exigir deploy conjunto.
 O CD de um servico nao deve criar/destruir o cluster nem os recursos dos demais.
-ElasticMQ oferece filas compativeis com SQS, sem AWS. Gateway e agentes de
-monitoramento ficam para uma etapa posterior. New Relic continua externo.
+ElasticMQ oferece filas compativeis com SQS, sem AWS. Os agentes Kubernetes
+enviam telemetria ao New Relic externo; nao foi adicionado um gateway.
 
 ## Cluster
 
-Requisitos: Docker Desktop aberto, Terraform >= 1.7 e kubectl compativel com
+Requisitos: Docker Desktop aberto, Terraform >= 1.9 e kubectl compativel com
 Kubernetes 1.35. Nao precisa ativar Kubernetes no Docker Desktop nem instalar
 o CLI kind: o provider Terraform usa a biblioteca do kind.
 
@@ -55,6 +55,22 @@ bash scripts/cluster.sh destroy
 
 Destroy remove o cluster inteiro e pode apagar os dados dos bancos e filas.
 Nao delete o container do node manualmente. Backup de state nao e backup de banco.
+
+## New Relic
+
+APM/logs/traces dos tres servicos e metricas do kind usam a conta New Relic,
+sem recursos AWS. A license key fica somente no diretorio privado do ambiente.
+Na raiz deste repositorio:
+
+```bash
+python3 scripts/configure_newrelic.py
+python3 scripts/deploy_observability.py
+```
+
+Depois publique cada servico pelo seu proprio script/CD. Sem essa configuracao,
+as APIs continuam funcionando com o profiler desligado. O [guia New Relic](docs/18-observabilidade-new-relic.md)
+explica os IDs da Saga, limites de tracing, consultas NRQL e como desabilitar
+o monitoramento sem apagar dados. Nao precisa de User API Key para enviar dados.
 
 ## SonarQube
 
@@ -104,6 +120,9 @@ durante a execucao. Nao remova essa verificacao para contornar erro de checksum.
 
 Cluster e mensageria persistente implementados. Os tres repositorios de servico
 possuem bancos proprios, APIs e CD independente no kind. As primeiras analises
-reais no Sonar passaram nos tres projetos. O novo CD precisa ser publicado por
-PR e validado no GitHub; sua validacao local nao substitui essa execucao.
-Metrics-server/HPA e observabilidade distribuida no New Relic continuam pendentes.
+reais no Sonar passaram nos tres projetos. CI, Sonar e CD independentes foram
+validados no GitHub apos os merges de deploy local. Alteracoes novas precisam
+ser aprovadas novamente; validacao manual nao substitui os checks.
+New Relic esta integrado via imagens/agentes do cluster; veja o guia 18 para
+validar a telemetria no site. Metrics-server/HPA, BDD no CI e evidencias finais
+continuam pendentes.

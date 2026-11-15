@@ -42,7 +42,8 @@ ficam no seu proprio repositorio; CD de um servico nao destroi os outros.
 O modulo cluster/ cria somente a base. O modulo platform/ deste repositorio
 adiciona ElasticMQ e seu volume; infra/kubernetes/ em cada servico adiciona
 seu banco, API e configuracoes. Siga o [guia completo](17-deploy-kubernetes-local.md).
-Metrics-server, gateway, HPA e agentes New Relic ainda nao foram incluidos.
+Metrics-server, gateway e HPA ainda nao foram incluidos. Os agentes New Relic
+foram acrescentados no [guia 18](18-observabilidade-new-relic.md), com state proprio.
 
 | Uso | Porta no computador | NodePort |
 | --- | ---: | ---: |
