@@ -168,10 +168,12 @@ seus dados. Sonar e outro projeto Compose e deve continuar ligado para o CI loca
 
 ## Limites desta etapa
 
-Os recursos e o caminho manual sao validados no cluster local. A execucao real
-do novo CD no GitHub depende de commit/PR/merge; testes locais nao a substituem.
-Ainda faltam New Relic distribuido, metrics-server/HPA, BDD automatico no CI e
-evidencias finais. Nenhum deploy AWS ou alteracao nas fases anteriores e necessario.
+Os recursos e o caminho manual sao validados no cluster local. A primeira
+execucao real de CI, Sonar e CD passou nos tres repositorios apos os merges.
+Cada alteracao nova precisa passar novamente pelos checks do proprio SHA.
+A integracao New Relic foi adicionada posteriormente no [guia 18](18-observabilidade-new-relic.md).
+Metrics-server/HPA, BDD automatico no CI e evidencias finais continuam separados.
+Nenhum deploy AWS ou alteracao nas fases anteriores e necessario.
 
 ## Verificacoes desta implementacao
 

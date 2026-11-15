@@ -38,5 +38,8 @@ jobs:
           terraform -chdir=platform init -backend=false -input=false -lockfile=readonly
           terraform -chdir=platform fmt -check -recursive
           terraform -chdir=platform validate
+          terraform -chdir=observability init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=observability fmt -check -recursive
+          terraform -chdir=observability validate
       - name: Validar Compose
         run: docker compose --env-file sonar.env.example -f compose.sonar.yml config --quiet
